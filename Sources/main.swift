@@ -23,7 +23,7 @@ public typealias IO<T> = () -> Result<T, Error>
 
 public func Bind<T, U>(
   _ io: @escaping IO<T>,
-  _ mapper: @escaping (T) -> IO<U>
+  _ mapper: @escaping (T) -> IO<U>,
 ) -> IO<U> {
   return {
     let rt: Result<T, _> = io()
@@ -35,7 +35,7 @@ public func Bind<T, U>(
 }
 
 public func Lift<T, U>(
-  _ pure: @escaping (T) -> Result<U, Error>
+  _ pure: @escaping (T) -> Result<U, Error>,
 ) -> (T) -> IO<U> {
   return {
     let t: T = $0
@@ -99,7 +99,7 @@ public func s2instance() -> IO<StoreToInstance> {
     Lift {
       let mdl: Module = $0
       return .success(module2store2instance(mdl))
-    }
+    },
   )
 }
 
@@ -130,7 +130,7 @@ public struct LogFilterWasmConfigSimpleByte {
   public init(
     _ fname2fn: @escaping FuncNameToFunc,
     keep1: FunctionName = "keep_log",
-    setchar: FunctionName = "set_char"
+    setchar: FunctionName = "set_char",
   ) {
     self.fname2fn = fname2fn
     self.keep1 = keep1
@@ -228,7 +228,7 @@ public func data2memory(memory: Memory, offset: UInt, data: Data) {
     {
       let ptr: UnsafeMutableRawBufferPointer = $0
       ptr.copyBytes(from: data)
-    }
+    },
   )
 }
 
@@ -239,7 +239,7 @@ public func byte2memory(memory: Memory, offset: UInt, value: UInt8) {
     {
       let ptr: UnsafeMutableRawBufferPointer = $0
       ptr.storeBytes(of: value, toByteOffset: Int(offset), as: UInt8.self)
-    }
+    },
   )
 }
 
@@ -249,7 +249,7 @@ public struct WasmInstance {
   public func copyData(
     offset: UInt,
     data: Data,
-    _ memname: String = "memory"
+    _ memname: String = "memory",
   ) -> Result<(), Error> {
     let exports: Exports = self.instance.exports
     let omem: Memory? = exports[memory: "memory"]
@@ -265,7 +265,7 @@ public struct WasmInstance {
   public func setByte(
     offset: UInt,
     value: UInt8,
-    _ memname: String = "memory"
+    _ memname: String = "memory",
   ) -> Result<(), Error> {
     let exports: Exports = self.instance.exports
     let omem: Memory? = exports[memory: "memory"]
@@ -328,7 +328,7 @@ public struct LinesToFiltered {
   public init(
     _ filter: @escaping LineKeeper,
     lines: @escaping Lines = stdin2lines(),
-    writer: @escaping LineWriter = line2stdout()
+    writer: @escaping LineWriter = line2stdout(),
   ) {
     self.lines = lines
     self.writer = writer
@@ -368,42 +368,42 @@ struct LogFilterWasm {
       Lift {
         let s2i: StoreToInstance = $0
         return s2i(st)
-      }
+      },
     )
     let in2f: IO<FuncNameToFunc> = Bind(
       ii,
       Lift {
         let instance: Instance = $0
         return .success(instance2name2func(instance))
-      }
+      },
     )
     let ifilter1stcfg: IO<LogFilterWasmConfigSimpleByte> = Bind(
       in2f,
       Lift {
         let n2f: FuncNameToFunc = $0
         return .success(LogFilterWasmConfigSimpleByte(n2f))
-      }
+      },
     )
     let ifilter1stByte: IO<LogFilterWasmSimpleByte> = Bind(
       ifilter1stcfg,
       Lift {
         let cfg: LogFilterWasmConfigSimpleByte = $0
         return cfg.toLogFilter()
-      }
+      },
     )
     let ilkeeper: IO<LineKeeper> = Bind(
       ifilter1stByte,
       Lift {
         let lfilter: LogFilterWasmSimpleByte = $0
         return .success(lfilter.toLineKeeper())
-      }
+      },
     )
     let il2filter: IO<LinesToFiltered> = Bind(
       ilkeeper,
       Lift {
         let keeper: LineKeeper = $0
         return .success(LinesToFiltered(keeper))
-      }
+      },
     )
 
     let lines2filtered2stdout: IO<Void> = Bind(
@@ -411,7 +411,7 @@ struct LogFilterWasm {
       {
         let l2f: LinesToFiltered = $0
         return l2f.lines2filtered2writer()
-      }
+      },
     )
 
     let res: Result<_, _> = lines2filtered2stdout()
