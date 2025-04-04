@@ -1,0 +1,9 @@
+disabled_rules:
+  - identifier_name
+  - large_tuple
+  - trailing_comma
+  - file_length
+  - function_body_length
+
+type_name:
+  min_length: 2
